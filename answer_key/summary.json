@@ -1,0 +1,12 @@
+{
+  "beneficiaries": 426,
+  "deaths": 19,
+  "part_a_original_claims": 678,
+  "part_b_original_claims": 316,
+  "cancellations": 51,
+  "adjustments": 53,
+  "late_arriving_originals": 101,
+  "part_a_total_net_paid": "1948819.05",
+  "part_b_total_net_paid": "28412.49",
+  "net_paid_rule": "Group claim versions by (part, CLM_CNTL_NUM). Cancelled family -> 0; adjusted family -> the adjustment's amount; otherwise the original's amount. Part B amount = sum of CLM_LINE_CVRD_PD_AMT over the claim's lines. Service month = month of the original CLM_FROM_DT."
+}
