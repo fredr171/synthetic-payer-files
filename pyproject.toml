@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "synthetic-payer-files"
+version = "1.0.0"
+description = "Seeded synthetic payer delivery files (CMS CCLF + Humana MA) with answer keys"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []  # standard library only
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+generate-cclf = "synthetic_payer_files.generate_cclf:main"
+generate-humana = "synthetic_payer_files.generate_humana:main"
+validate-cclf = "synthetic_payer_files.validate_cclf:main"
+validate-humana = "synthetic_payer_files.validate_humana:main"
+validate-crosspayer = "synthetic_payer_files.validate_crosspayer:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]

@@ -18,7 +18,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 from pathlib import Path
 
-from cclf_common import (
+from .cclf_common import (
     MBI_REGEX,
     coverage_spans,
     file_name,
@@ -26,10 +26,10 @@ from cclf_common import (
     overlaps_any_span,
     parse_month,
 )
-from humana_common import hum_file_name
-from validate_cclf import Check, read_csv, report
+from .humana_common import hum_file_name
+from .validate_cclf import Check, read_csv, report
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(".")  # defaults are relative to the working directory (the repo root)
 SWITCHER_RANGE = (15, 20)
 GENDER = {"1": "M", "2": "F"}
 
@@ -186,7 +186,7 @@ def run(cclf_dir: Path, humana_dir: Path, crossover: Path) -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--cclf-dir", type=Path, default=HERE / "output")
+    parser.add_argument("--cclf-dir", type=Path, default=HERE / "output" / "cms")
     parser.add_argument("--humana-dir", type=Path, default=HERE / "output" / "humana")
     parser.add_argument(
         "--crossover", type=Path, default=HERE / "answer_key" / "crossover_members.csv"

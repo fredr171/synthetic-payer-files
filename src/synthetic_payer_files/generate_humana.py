@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
 
-from cclf_common import (
+from .cclf_common import (
     KB,
     add_months,
     csv_line_bytes,
@@ -39,7 +39,7 @@ from cclf_common import (
     remove_stale_csvs,
     write_csv,
 )
-from clinical_reference import (
+from .clinical_reference import (
     ACUTE_OP_DX,
     DRGS,
     HCPCS_FEES,
@@ -49,7 +49,7 @@ from clinical_reference import (
     visit_lines,
     weighted,
 )
-from humana_common import (
+from .humana_common import (
     AMOUNT_FIELDS,
     DX_COLUMNS,
     FORM_INSTITUTIONAL,
@@ -66,9 +66,9 @@ from humana_common import (
     STATUS_REVERSED,
     hum_file_name,
 )
-from member_registry import FFS, MA, Address, Person, Provider, Registry, Span, moved_address
+from .member_registry import FFS, MA, Address, Person, Provider, Registry, Span, moved_address
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(".")  # defaults are relative to the working directory (the repo root)
 
 # ---------------------------------------------------------------------------
 # Tunable parameters (sizes in bytes; ranges in humana_common.py)

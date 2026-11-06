@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
-from cclf_common import (
+from .cclf_common import (
     ADJ_ADJUSTMENT,
     ADJ_CANCEL,
     ADJ_ORIGINAL,
@@ -38,7 +38,7 @@ from cclf_common import (
     parse_month,
 )
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(".")  # defaults are relative to the working directory (the repo root)
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 AMT_RE = re.compile(r"^-?\d+\.\d{2}$")
 MAX_EXAMPLES = 3
@@ -493,7 +493,7 @@ def report(checks: list[Check], title: str) -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--output-dir", type=Path, default=HERE / "output")
+    parser.add_argument("--output-dir", type=Path, default=HERE / "output" / "cms")
     parser.add_argument("--answer-key-dir", type=Path, default=HERE / "answer_key")
     args = parser.parse_args(argv)
     return 0 if Validator(args.output_dir, args.answer_key_dir).run() else 1

@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
 
-from cclf_common import (
+from .cclf_common import (
     MBI_ALPHA,
     add_months,
     fmt_date,
@@ -27,7 +27,7 @@ from cclf_common import (
     month_range,
     write_csv,
 )
-from clinical_reference import CHRONIC_DX, ESRD_DX, weighted
+from .clinical_reference import CHRONIC_DX, ESRD_DX, weighted
 
 FFS, MA = "FFS", "MA"
 

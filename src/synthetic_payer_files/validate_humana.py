@@ -18,7 +18,7 @@ from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
 
-from cclf_common import (
+from .cclf_common import (
     KB,
     MBI_REGEX,
     add_months,
@@ -30,7 +30,7 @@ from cclf_common import (
     npi_is_valid,
     parse_month,
 )
-from humana_common import (
+from .humana_common import (
     AMOUNT_FIELDS,
     FORM_INSTITUTIONAL,
     FORM_PROFESSIONAL,
@@ -47,9 +47,9 @@ from humana_common import (
     STATUS_REVERSED,
     hum_file_name,
 )
-from validate_cclf import AMT_RE, DATE_RE, Check, read_csv, report
+from .validate_cclf import AMT_RE, DATE_RE, Check, read_csv, report
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(".")  # defaults are relative to the working directory (the repo root)
 DX_RE = re.compile(r"^[A-Z][0-9][0-9A-Z]{1,5}$")
 CAPITATION_SHARE_RANGE = (0.20, 0.40)
 

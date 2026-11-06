@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from datetime import date
 
-from cclf_common import KB
+from .cclf_common import KB
 
 HUM_ELIG_COLUMNS = [
     "MEMBER_ID", "MBI", "FIRST_NAME", "MIDDLE_INITIAL", "LAST_NAME", "DOB", "GENDER",

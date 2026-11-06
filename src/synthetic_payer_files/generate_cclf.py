@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
 
-from cclf_common import (
+from .cclf_common import (
     ADJ_ADJUSTMENT,
     ADJ_CANCEL,
     ADJ_ORIGINAL,
@@ -46,7 +46,7 @@ from cclf_common import (
     remove_stale_csvs,
     write_csv,
 )
-from clinical_reference import (
+from .clinical_reference import (
     ACUTE_OP_DX,
     DRGS,
     HCPCS_FEES,
@@ -56,9 +56,9 @@ from clinical_reference import (
     visit_lines,
     weighted,
 )
-from member_registry import DUAL_CODES, FFS, Address, Person, Registry, Span, moved_address
+from .member_registry import DUAL_CODES, FFS, Address, Person, Registry, Span, moved_address
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(".")  # defaults are relative to the working directory (the repo root)
 
 # ---------------------------------------------------------------------------
 # Tunable volume parameters (chosen so files land in the size ranges in the brief).
@@ -899,7 +899,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--seed", type=int, default=42, help="random seed (default 42)")
     parser.add_argument("--start", default="2023-01", help="first month YYYY-MM (initial load)")
     parser.add_argument("--end", default="2025-12", help="last month YYYY-MM")
-    parser.add_argument("--output-dir", type=Path, default=HERE / "output")
+    parser.add_argument("--output-dir", type=Path, default=HERE / "output" / "cms")
     parser.add_argument("--answer-key-dir", type=Path, default=HERE / "answer_key")
     args = parser.parse_args(argv)
 

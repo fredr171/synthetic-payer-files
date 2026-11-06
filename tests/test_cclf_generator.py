@@ -10,17 +10,12 @@ from __future__ import annotations
 import csv
 import hashlib
 import shutil
-import sys
 from pathlib import Path
 
 import pytest
 
-TOOL_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(TOOL_DIR))
-
-import generate_cclf  # noqa: E402
-import validate_cclf  # noqa: E402
-from cclf_common import MBI_REGEX, npi_is_valid  # noqa: E402
+from synthetic_payer_files import generate_cclf, validate_cclf
+from synthetic_payer_files.cclf_common import MBI_REGEX, npi_is_valid
 
 
 @pytest.fixture(scope="module")
