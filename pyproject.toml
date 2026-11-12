@@ -1,12 +1,14 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "synthetic-payer-files"
-version = "1.0.0"
-description = "Seeded synthetic payer delivery files (CMS CCLF + Humana MA) with answer keys"
+version = "2.0.0"
+description = "Seeded synthetic payer delivery files (CMS CCLF + a fictional MA payer) with answer keys"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = []  # standard library only
 
@@ -15,9 +17,9 @@ dev = ["pytest>=8", "ruff>=0.6"]
 
 [project.scripts]
 generate-cclf = "synthetic_payer_files.generate_cclf:main"
-generate-humana = "synthetic_payer_files.generate_humana:main"
+generate-ma-payer = "synthetic_payer_files.generate_ma_payer:main"
 validate-cclf = "synthetic_payer_files.validate_cclf:main"
-validate-humana = "synthetic_payer_files.validate_humana:main"
+validate-ma-payer = "synthetic_payer_files.validate_ma_payer:main"
 validate-crosspayer = "synthetic_payer_files.validate_crosspayer:main"
 
 [tool.setuptools.packages.find]

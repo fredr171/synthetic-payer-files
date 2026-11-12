@@ -1,6 +1,8 @@
 # synthetic-payer-files
 
-Seeded, fully synthetic payer test files (CMS CCLF + Humana MA) with answer keys. They
+[![CI](https://github.com/fredr171/synthetic-payer-files/actions/workflows/ci.yml/badge.svg)](https://github.com/fredr171/synthetic-payer-files/actions/workflows/ci.yml)
+
+Seeded, fully synthetic payer test files (CMS CCLF + a fictional Medicare Advantage payer) with answer keys. They
 feed the [claims-lakehouse-dbt-duckdb](https://github.com/fredr171/claims-lakehouse-dbt-duckdb)
 ETL, which pins a tagged release of this package for its end-to-end tests.
 
@@ -8,8 +10,8 @@ Two generators:
 
 - **`generate-cclf`**: CMS **CCLF** (Claim and Claim Line Feed) monthly deliveries
   for Medicare fee-for-service (FFS) beneficiaries.
-- **`generate-humana`**: Humana-style **Medicare Advantage** (MA) eligibility and
-  medical-claims extracts.
+- **`generate-ma-payer`**: eligibility and medical-claims extracts from a fictional
+  **Medicare Advantage** (MA) payer.
 
 Both draw their people from one shared member registry, so beneficiaries who switch
 between FFS and MA keep the same MBI, name, DOB and address in both feeds, with no
@@ -27,23 +29,23 @@ facility or plan is coincidental.
 | CCLF1 | Part A claim header | one row per claim version |
 | CCLF4 | Part A diagnosis codes | 1–6 rows per CCLF1 claim version |
 | CCLF5 | Part B physician claim lines | 1–4 lines per claim version |
-| HUM_ELIG | MA member eligibility | one row per member per delivery in which it is new, changed or terminated |
-| HUM_MEDCLM | MA medical claims (UB-04 and CMS-1500) | one row per claim line per claim version |
+| MAP_ELIG | MA member eligibility | one row per member per delivery in which it is new, changed or terminated |
+| MAP_MEDCLM | MA medical claims (UB-04 and CMS-1500) | one row per claim line per claim version |
 
 ## Repository layout
 
 ```
 src/synthetic_payer_files/
 ├── generate_cclf.py, validate_cclf.py, cclf_common.py
-├── generate_humana.py, validate_humana.py, humana_common.py
+├── generate_ma_payer.py, validate_ma_payer.py, ma_payer_common.py
 ├── validate_crosspayer.py              FFS <-> MA consistency checks
 ├── member_registry.py                  shared people, coverage spans, switchers, providers
 └── clinical_reference.py               shared diagnosis codes, DRGs, HCPCS fees
 output/cms/YYYY-MM/CCLF*_YYYYMM.csv     CCLF files (seed 42)
-output/humana/YYYY-MM/HUM_*.csv         Humana files (seed 42)
+output/ma_payer/YYYY-MM/MAP_*.csv       MA payer files (seed 42)
 answer_key/                             CCLF expected results + crossover_members.csv
-answer_key/humana/                      Humana expected results
-tests/                                  test_cclf_generator.py, test_humana_generator.py
+answer_key/ma_payer/                    MA payer expected results
+tests/                                  test_cclf_generator.py, test_ma_payer_generator.py
 ```
 
 ## Install and regenerate
@@ -51,9 +53,9 @@ tests/                                  test_cclf_generator.py, test_humana_gene
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"   # Windows path
 generate-cclf   --seed 42 --start 2023-01 --end 2025-12
-generate-humana --seed 42 --start 2023-01 --end 2025-12
+generate-ma-payer --seed 42 --start 2023-01 --end 2025-12
 validate-cclf
-validate-humana
+validate-ma-payer
 validate-crosspayer
 pytest
 ```
@@ -67,8 +69,8 @@ generators**, or the switchers will not line up. Options:
 - both: `--seed`, `--start`, `--end` (YYYY-MM)
 - `generate-cclf`: `--output-dir` (default `output/cms/`), `--answer-key-dir` (default
   `answer_key/`)
-- `generate-humana`: `--output-dir` (default `output/humana/`), `--answer-key-dir`
-  (default `answer_key/humana/`), `--crossover-dir` (default `answer_key/`)
+- `generate-ma-payer`: `--output-dir` (default `output/ma_payer/`), `--answer-key-dir`
+  (default `answer_key/ma_payer/`), `--crossover-dir` (default `answer_key/`)
 
 Re-running deletes and replaces that generator's CSVs only. Both write the same
 `answer_key/crossover_members.csv`.
@@ -76,7 +78,7 @@ Re-running deletes and replaces that generator's CSVs only. Both write the same
 ## Versioning
 
 Releases are git tags (`v1.0.0`, ...). The lakehouse installs one with
-`pip install "synthetic-payer-files @ git+https://github.com/fredr171/synthetic-payer-files@v1.0.0"`.
+`pip install "synthetic-payer-files @ git+https://github.com/fredr171/synthetic-payer-files@v2.0.0"`.
 Any change to seeded output (a new draw, a new field, a different distribution) is a new
 **minor** or **major** version, never a re-tag: the lakehouse's tests hardcode seed-42
 counts and its S3 deliveries came from a specific release.
@@ -87,8 +89,8 @@ counts and its S3 deliveries came from a specific release.
 `registry:<seed>`), with a list of coverage spans `(payer, start, end)`:
 
 - FFS population: 118 at the start, 7–10 newly attributed per month.
-- MA (Humana) population: 88 at the start, 2–3 new enrollees per month (4–7 each
-  January). About 6% leave Humana for another MA plan each January 1.
+- MA population: 88 at the start, 2–3 new enrollees per month (4–7 each
+  January). About 6% leave the MA payer for another MA plan each January 1.
 - **Switchers** (15–20 people; 17 for seed 42), listed in
   `answer_key/crossover_members.csv` (`BENE_MBI_ID, MEMBER_ID, direction,
   effective_date, enrollment_period`):
@@ -100,9 +102,9 @@ counts and its S3 deliveries came from a specific release.
 - Switchers do not die or get random demographic updates. Their address moves are
   planned in the registry, so both feeds report the same address at every handoff.
 - Providers come from one pool. Shared hospitals, SNF and professionals appear in both
-  feeds; HHA and hospice are FFS-only; a few Humana-only providers (a primary-care
+  feeds; HHA and hospice are FFS-only; a few MA-only providers (a primary-care
   group and a cardiology group) plus one out-of-network hospital and one
-  out-of-network urgent-care physician appear only in Humana claims.
+  out-of-network urgent-care physician appear only in MA payer claims.
 
 ---
 
@@ -199,7 +201,7 @@ two agree.
 | `net_paid_by_load_month.csv` | Net change booked in each delivery month (originals, plus adjustment deltas, minus cancelled amounts). Sums to the same grand total |
 | `claim_actions.csv` | Every cancellation/adjustment with its original: IDs, load months, amounts, final amount |
 | `member_changes.csv` | Every CCLF8 row's reason (`NEW`, `ADDRESS`, `DUAL`, `PARTB`, `DEATH`, `FFS_END`, `FFS_RETURN`) and a short detail, useful for SCD2 testing |
-| `crossover_members.csv` | Every FFS ↔ MA switch (shared with the Humana generator) |
+| `crossover_members.csv` | Every FFS ↔ MA switch (shared with the MA payer generator) |
 | `summary.json` | Counts and grand totals |
 
 ## Validator (`validate_cclf.py`)
@@ -223,26 +225,25 @@ on any failure. Checks:
 
 ---
 
-# Humana Medicare Advantage
+# Fictional Medicare Advantage payer
 
-> **The field names are invented.** Humana's real extract layouts are proprietary.
-> These columns are modeled on typical MA payer eligibility/claims extracts and on the
-> APCD Common Data Layout (CDL), so they look like what a payer sends. They are not a
-> Humana specification. Contract IDs (`H9101`, `H9102`), plan names and member IDs
+> **The payer and its field names are invented.** These columns are modeled on typical MA payer eligibility/claims extracts and on the
+> APCD Common Data Layout (CDL), so they look like what a payer sends. They are not any
+> real payer's specification. Contract IDs (`H9101`, `H9102`), plan names and member IDs
 > are fake.
 
 ## Format
 
-- `output/humana/YYYY-MM/HUM_{ELIG,MEDCLM}_YYYYMM.csv`: 36 months × 2 files = 72 files.
+- `output/ma_payer/YYYY-MM/MAP_{ELIG,MEDCLM}_YYYYMM.csv`: 36 months × 2 files = 72 files.
 - Same CSV conventions as CCLF: header row, comma-delimited, LF, empty = missing,
   dates `YYYY-MM-DD`, amounts with 2 decimals, ICD-10 codes without the dot,
   `ICD_VERSION = 0`.
-- Sizes: monthly files ~4.2–5.4 KB (range 4–6 KB). Initial load: HUM_ELIG ~17 KB
-  (range 15–25 KB), HUM_MEDCLM ~11 KB (range 10–15 KB). Sizes print at the end.
+- Sizes: monthly files ~4.1–5.4 KB (range 4–6 KB). Initial load: MAP_ELIG ~17 KB
+  (range 15–25 KB), MAP_MEDCLM ~12 KB (range 10–15 KB). Sizes print at the end.
 - Products: `HMO` (H9101-001), `D-SNP` (H9101-003, dual-eligible members only) and
   `PPO` (H9102-002). Duals are mostly in the D-SNP.
 
-## HUM_ELIG (eligibility)
+## MAP_ELIG (eligibility)
 
 - `MEMBER_ID` is `H` + 9 digits, 1:1 with `MBI` (the same MBI as in CCLF for
   switchers).
@@ -250,7 +251,7 @@ on any failure. Checks:
 - **Later months**: new enrollees and switchers from FFS (`NEW`), changed members
   (`UPDATE`) and terminations (`TERM`). Each row is a **full row with current
   values**; at most one row per member per month.
-- Change types (reason in `answer_key/humana/member_changes.csv`): PCP change
+- Change types (reason in `answer_key/ma_payer/member_changes.csv`): PCP change
   (`PCP_NPI`, `PCP_TIN`, `PCP_ATTRIBUTION_START_DT`), address change, dual/LIS change
   (D-SNP members stay dual), disenrollment, death.
 - **Disenrollment** (`TERM`): delivered in the month after coverage ends, with
@@ -260,7 +261,7 @@ on any failure. Checks:
   member after a `TERM`.
 - `RECORD_CHANGE_TYPE` is a synthetic helper column, as in CCLF8.
 
-## HUM_MEDCLM (medical claims)
+## MAP_MEDCLM (medical claims)
 
 - **One row per claim line**; header fields repeat on every line. The key is
   `(CLAIM_ID, CLAIM_LINE_NUM, CLAIM_FREQ_CD)`.
@@ -303,7 +304,7 @@ on any failure. Checks:
 
 ## Field mapping to CCLF
 
-| Concept | CCLF | Humana |
+| Concept | CCLF | MA payer |
 |---|---|---|
 | Medicare beneficiary ID | `BENE_MBI_ID` | `MBI` (plus payer `MEMBER_ID`) |
 | Name, DOB | `BENE_1ST_NAME`, `BENE_MIDL_NAME`, `BENE_LAST_NAME`, `BENE_DOB` | `FIRST_NAME`, `MIDDLE_INITIAL`, `LAST_NAME`, `DOB` |
@@ -333,21 +334,21 @@ on any failure. Checks:
 | Plan / network / capitation | (FFS: n/a) | `CONTRACT_ID`, `PBP_ID`, `IN_NETWORK_FLAG`, `CAPITATED_FLAG` |
 | Attributed PCP | (ACO attribution, not in CCLF8) | `PCP_NPI`, `PCP_TIN`, `PCP_ATTRIBUTION_START_DT` |
 
-## Answer key (`answer_key/humana/`)
+## Answer key (`answer_key/ma_payer/`)
 
 | File | What your ETL should reproduce |
 |---|---|
-| `final_members.csv` | Latest state of every member (all HUM_ELIG columns except the helper, plus `FIRST_DELIVERY_MONTH`, `LAST_DELIVERY_MONTH`) |
+| `final_members.csv` | Latest state of every member (all MAP_ELIG columns except the helper, plus `FIRST_DELIVERY_MONTH`, `LAST_DELIVERY_MONTH`) |
 | `net_paid_by_service_month.csv` | Institutional / professional / total net paid by the original's service month, after reversals and replacements |
 | `net_paid_by_processed_month.csv` | Paid booked in each delivery month (sum of every row's `PAID_AMT`) |
 | `capitated_encounters_by_month.csv` | Capitated claims, lines and allowed amount by service month |
 | `claim_actions.csv` | Every void and replacement with its original, amounts and final paid |
-| `member_changes.csv` | Every HUM_ELIG row's reason (`NEW`, `PCP`, `ADDRESS`, `DUAL_LIS`, `DISENROLL`, `DEATH`) and a detail |
+| `member_changes.csv` | Every MAP_ELIG row's reason (`NEW`, `PCP`, `ADDRESS`, `DUAL_LIS`, `DISENROLL`, `DEATH`) and a detail |
 | `summary.json` | Counts and grand totals |
 
 ## Validators
 
-`validate_humana.py` (output/humana vs answer_key/humana) checks: files, headers and
+`validate_ma_payer.py` (output/ma_payer vs answer_key/ma_payer) checks: files, headers and
 formats; sizes; MEMBER_ID/MBI format and 1:1; `NEW` first and nothing after `TERM`;
 plan/contract consistency and D-SNP members being dual; claims only for delivered
 members, inside an enrollment span and not after death; a unique claim-line key;
@@ -357,10 +358,10 @@ late share; capitation only on PCP-rendered claims at ~30%; out-of-network prese
 and every answer key file. It recomputes net paid as a plain `SUM(PAID_AMT)`, a
 different method from the generator's claim-family logic.
 
-`validate_crosspayer.py` (CCLF output vs Humana output) checks: 15–20 switchers with
+`validate_crosspayer.py` (CCLF output vs MA payer output) checks: 15–20 switchers with
 valid directions and dates; that the only MBIs in both feeds are the listed switchers;
 no overlapping FFS/MA coverage, with the observed switches matching the crossover
-list; no CCLF claims during MA coverage and no Humana claims during FFS coverage; and
+list; no CCLF claims during MA coverage and no MA payer claims during FFS coverage; and
 the same name/DOB/sex everywhere, plus the same address and dual status in each
 switch month.
 
@@ -375,7 +376,7 @@ switch month.
   SNF 20, swing bed 30, home health 10, hospice 50. CCLF5 uses claim type 71.
 - HCPCS: 99213, 99214, 99203, 99204, G0439, 36415, 80053, 85025, 83036, 93000,
   71046, 20610, at approximate national allowed amounts. CCLF paid is 80% of allowed;
-  labs and the annual wellness visit are paid at 100% (no coinsurance). Humana adds
+  labs and the annual wellness visit are paid at 100% (no coinsurance). The MA payer adds
   ER levels 99283–99285 and G0463 clinic visits on the facility side.
 - Population: ~10% under 65 (disabled, `BENE_ORGNL_ENTLMT_RSN_CD=1`, some ESRD=2),
   ~15% dual-eligible, a few ESRD, ~3% deaths.
@@ -384,6 +385,16 @@ switch month.
 
 Population, switcher and provider parameters live at the top of `member_registry.py`.
 Byte targets and claim shares live at the top of `generate_cclf.py` and
-`generate_humana.py`. After any change, run all three validators across several seeds.
+`generate_ma_payer.py`. After any change, run all three validators across several seeds.
 The tests run seed 7; a 30-seed sweep of all three validators passed when this was
 written.
+
+## AI assistance
+
+I designed this project and directed and verified the work. I wrote the code with AI
+assistance (Claude Code). Every generated file is checked by the three validators and
+the test suite, and CI regenerates seed 42 and confirms it matches the committed files.
+
+## License
+
+[MIT](LICENSE)

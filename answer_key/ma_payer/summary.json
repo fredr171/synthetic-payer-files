@@ -1,0 +1,16 @@
+{
+  "members": 199,
+  "deaths": 5,
+  "original_claims": 257,
+  "institutional_original_claims": 93,
+  "professional_original_claims": 164,
+  "replacements": 12,
+  "voids": 7,
+  "denied": 7,
+  "capitated_claims": 30,
+  "late_arriving_originals": 28,
+  "pcp_rendered_professional_claims": 101,
+  "institutional_total_net_paid": "366998.87",
+  "professional_total_net_paid": "13509.73",
+  "net_paid_rule": "Claim family = original CLAIM_ID. A reversal (status R, freq 8) repeats the original CLAIM_ID with negated amounts; a replacement (freq 7) has a new CLAIM_ID and ORIG_CLAIM_ID = the original. Voided -> 0; replaced -> the replacement's PAID_AMT; denied -> 0; otherwise the original's PAID_AMT. Equivalently SUM(PAID_AMT) over every row. Service month = month of the original SERVICE_FROM_DT."
+}
