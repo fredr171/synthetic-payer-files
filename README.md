@@ -3,8 +3,10 @@
 [![CI](https://github.com/fredr171/synthetic-payer-files/actions/workflows/ci.yml/badge.svg)](https://github.com/fredr171/synthetic-payer-files/actions/workflows/ci.yml)
 
 Seeded, fully synthetic payer test files (CMS CCLF + a fictional Medicare Advantage payer) with answer keys. They
-feed the [claims-lakehouse-dbt-duckdb](https://github.com/fredr171/claims-lakehouse-dbt-duckdb)
-ETL, which pins a tagged release of this package for its end-to-end tests.
+feed two lakehouses that build the same pipeline on different platforms:
+[claims-lakehouse-dbt-duckdb](https://github.com/fredr171/claims-lakehouse-dbt-duckdb) (AWS) and
+[claims-lakehouse-databricks-azure](https://github.com/fredr171/claims-lakehouse-databricks-azure)
+(Azure + Databricks). Each pins a tagged release of this package for its end-to-end tests.
 
 Two generators:
 
