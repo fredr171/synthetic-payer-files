@@ -1,5 +1,7 @@
 # synthetic-payer-files
 
+[![CI](https://github.com/fredr171/synthetic-payer-files/actions/workflows/ci.yml/badge.svg)](https://github.com/fredr171/synthetic-payer-files/actions/workflows/ci.yml)
+
 Seeded, fully synthetic payer test files (CMS CCLF + a fictional Medicare Advantage payer) with answer keys. They
 feed the [claims-lakehouse-dbt-duckdb](https://github.com/fredr171/claims-lakehouse-dbt-duckdb)
 ETL, which pins a tagged release of this package for its end-to-end tests.
@@ -386,3 +388,13 @@ Byte targets and claim shares live at the top of `generate_cclf.py` and
 `generate_ma_payer.py`. After any change, run all three validators across several seeds.
 The tests run seed 7; a 30-seed sweep of all three validators passed when this was
 written.
+
+## AI assistance
+
+I designed this project and directed and verified the work. I wrote the code with AI
+assistance (Claude Code). Every generated file is checked by the three validators and
+the test suite, and CI regenerates seed 42 and confirms it matches the committed files.
+
+## License
+
+[MIT](LICENSE)

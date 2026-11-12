@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,6 +7,8 @@ name = "synthetic-payer-files"
 version = "2.0.0"
 description = "Seeded synthetic payer delivery files (CMS CCLF + a fictional MA payer) with answer keys"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = []  # standard library only
 
