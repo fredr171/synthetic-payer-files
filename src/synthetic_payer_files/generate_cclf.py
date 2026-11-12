@@ -1,8 +1,8 @@
 """Generate synthetic, seeded CMS CCLF monthly test files (CCLF8, CCLF1, CCLF4, CCLF5).
 
 Everything is fake: names, addresses, MBIs, HICNs, NPIs, CCNs and TINs are generated.
-Beneficiaries, coverage spans and FFS <-> Humana MA switches come from the shared
-member registry (member_registry.py), so generate_humana.py with the same --seed,
+Beneficiaries, coverage spans and FFS <-> MA switches come from the shared
+member registry (member_registry.py), so generate_ma_payer.py with the same --seed,
 --start and --end sees the same people. Output is deterministic for those arguments.
 
 Usage:
@@ -62,7 +62,7 @@ HERE = Path(".")  # defaults are relative to the working directory (the repo roo
 
 # ---------------------------------------------------------------------------
 # Tunable volume parameters (chosen so files land in the size ranges in the brief).
-# Population sizes live in member_registry.py (shared with the Humana generator).
+# Population sizes live in member_registry.py (shared with the MA payer generator).
 # ---------------------------------------------------------------------------
 MONTHLY_TARGET_BYTES = (3.75 * KB, 4.4 * KB)
 INITIAL_CLAIMS_TARGET_BYTES = (9.5 * KB, 11.0 * KB)

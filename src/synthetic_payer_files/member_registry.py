@@ -1,4 +1,4 @@
-"""Shared synthetic member registry for the CCLF (Medicare FFS) and Humana (MA) generators.
+"""Shared synthetic member registry for the CCLF (Medicare FFS) and MA payer generators.
 
 Both generators build the same Registry from (seed, start, end), so every person has one
 MBI, name, DOB, address history and coverage timeline across payers. The registry decides
@@ -6,7 +6,7 @@ WHO is covered by WHICH payer WHEN (coverage spans, switches, deaths); each gene
 decides what its own files say about it (claims, payer-specific changes, delivery lags).
 
 Coverage rule: a person's FFS and MA spans never overlap. Switchers move between FFS and
-Humana MA on the 1st of a month (Jan 1 = Annual Enrollment Period; Feb-Apr = MA Open
+the MA payer on the 1st of a month (Jan 1 = Annual Enrollment Period; Feb-Apr = MA Open
 Enrollment Period / special enrollment). Switchers have frozen dual status and addresses
 apart from registry-planned moves, so both payers report identical demographics.
 """
@@ -39,7 +39,7 @@ FFS_NEW_PER_MONTH = (7, 10)
 MA_INITIAL_POPULATION = 88
 MA_NEW_PER_MONTH = (2, 3)
 MA_NEW_IN_JANUARY = (4, 7)  # AEP enrollments from other plans
-MA_DISENROLL_PROBABILITY = 0.06  # leave Humana for another MA plan (effective Jan 1)
+MA_DISENROLL_PROBABILITY = 0.06  # leave the MA payer for another MA plan (effective Jan 1)
 DEATH_PROBABILITY = 0.03
 NO_PART_B_SHARE = 0.06  # FFS only: MA requires Parts A and B
 DUAL_SHARE = 0.15
@@ -95,9 +95,9 @@ PLACES = [
 DUAL_CODES = [("02", 45), ("04", 15), ("08", 20), ("01", 12), ("03", 8)]
 
 # ---------------------------------------------------------------------------
-# Provider pool: shared practices bill both payers; some are Humana-only or out of network
+# Provider pool: shared practices bill both payers; some are MA-only or out of network
 # ---------------------------------------------------------------------------
-# (CCN, role, payers, Humana in-network)
+# (CCN, role, payers, MA payer in-network)
 FACILITIES = [
     ("360412", "HOSPITAL", (FFS, MA), True),
     ("360588", "HOSPITAL", (FFS, MA), True),
@@ -106,13 +106,13 @@ FACILITIES = [
     ("361574", "HOSPICE", (FFS,), True),
     ("360733", "HOSPITAL", (MA,), False),  # out-of-network hospital (emergencies)
 ]
-# (specialty, TIN index, payers, Humana in-network). TINs 0-2 are shared groups.
+# (specialty, TIN index, payers, MA payer in-network). TINs 0-2 are shared groups.
 PROFESSIONALS = [
     ("08", 0, (FFS, MA), True), ("08", 0, (FFS, MA), True), ("08", 1, (FFS, MA), True),
     ("11", 0, (FFS, MA), True), ("11", 1, (FFS, MA), True), ("50", 0, (FFS, MA), True),
     ("06", 1, (FFS, MA), True), ("30", 2, (FFS, MA), True), ("20", 2, (FFS, MA), True),
-    ("08", 3, (MA,), True), ("11", 3, (MA,), True),  # Humana-only primary care group
-    ("06", 4, (MA,), True),  # Humana-only cardiology group
+    ("08", 3, (MA,), True), ("11", 3, (MA,), True),  # MA-only primary care group
+    ("06", 4, (MA,), True),  # MA-only cardiology group
     ("08", 5, (MA,), False),  # out-of-network urgent care physician
 ]  # fmt: skip
 N_TINS = 6
@@ -147,7 +147,7 @@ class Provider:
     tin: str
     ccn: str  # facilities only
     payers: tuple[str, ...]
-    in_network: bool  # Humana network status
+    in_network: bool  # MA payer network status
     group: int  # TIN group index for professionals (see PROFESSIONALS); -1 for facilities
 
 
@@ -179,7 +179,7 @@ class Person:
     conditions: list[str]
     address: Address
     spans: list[Span] = field(default_factory=list)
-    member_id: str | None = None  # Humana MEMBER_ID
+    member_id: str | None = None  # MA payer MEMBER_ID
     true_death: date | None = None
     switcher: bool = False
     moves: list[tuple[date, Address]] = field(default_factory=list)  # switchers only
@@ -377,7 +377,7 @@ class Registry:
                 p.spans.append(Span(FFS, month, None))
 
     def _build_ma_population(self) -> None:
-        """Humana MA members: initial roster (enrolled before the window), then new enrollees."""
+        """MA payer members: initial roster (enrolled before the window), then new enrollees."""
         for _ in range(MA_INITIAL_POPULATION):
             p = self._new_person(self.start, initial=True, require_part_b=True)
             candidate = date(self.rng.randint(2016, self.start.year), 1, 1)

@@ -1,12 +1,12 @@
-"""Cross-payer checks between the CCLF (Medicare FFS) and Humana (MA) synthetic files.
+"""Cross-payer checks between the CCLF (Medicare FFS) and MA payer synthetic files.
 
 Derives coverage spans from each payer's eligibility files (CCLF8 BENE_RNG_BGN/END_DT,
-HUM_ELIG ENROLLMENT_START/END_DT), then checks: no overlapping FFS and MA coverage, no
+MAP_ELIG ENROLLMENT_START/END_DT), then checks: no overlapping FFS and MA coverage, no
 claims from one payer during the other payer's coverage, observed switches match
-answer_key/crossover_members.csv, and demographics agree between CCLF8 and HUM_ELIG.
+answer_key/crossover_members.csv, and demographics agree between CCLF8 and MAP_ELIG.
 
 Usage:
-    python validate_crosspayer.py [--cclf-dir output] [--humana-dir output/humana]
+    python validate_crosspayer.py [--cclf-dir output] [--ma-payer-dir output/ma_payer]
                                   [--crossover answer_key/crossover_members.csv]
 """
 
@@ -26,7 +26,7 @@ from .cclf_common import (
     overlaps_any_span,
     parse_month,
 )
-from .humana_common import hum_file_name
+from .ma_payer_common import map_file_name
 from .validate_cclf import Check, read_csv, report
 
 HERE = Path(".")  # defaults are relative to the working directory (the repo root)
@@ -42,7 +42,7 @@ def load(folder: Path, kind: str, names: list[str]) -> dict[str, list[tuple[str,
     for month_dir in month_dirs(folder):
         m = parse_month(month_dir.name)
         for ft in names:
-            name = file_name(ft, m) if kind == "cclf" else hum_file_name(ft, m)
+            name = file_name(ft, m) if kind == "cclf" else map_file_name(ft, m)
             path = month_dir / name
             if path.exists():
                 out[ft] += [(month_dir.name, row) for row in read_csv(path)[1]]
@@ -63,7 +63,7 @@ def spans_overlap(a: Spans, b: Spans) -> bool:
     return any(overlaps_any_span(b, s, e or date.max) for s, e in a)
 
 
-def run(cclf_dir: Path, humana_dir: Path, crossover: Path) -> bool:
+def run(cclf_dir: Path, ma_payer_dir: Path, crossover: Path) -> bool:
     checks: list[Check] = []
 
     def check(name: str) -> Check:
@@ -71,9 +71,9 @@ def run(cclf_dir: Path, humana_dir: Path, crossover: Path) -> bool:
         return checks[-1]
 
     cclf = load(cclf_dir, "cclf", ["CCLF8", "CCLF1", "CCLF5"])
-    hum = load(humana_dir, "humana", ["HUM_ELIG", "HUM_MEDCLM"])
+    map_files = load(ma_payer_dir, "ma_payer", ["MAP_ELIG", "MAP_MEDCLM"])
     cclf8 = [r for _, r in cclf["CCLF8"]]
-    elig = [r for _, r in hum["HUM_ELIG"]]
+    elig = [r for _, r in map_files["MAP_ELIG"]]
     ffs = coverage_spans(cclf8, "BENE_MBI_ID", "BENE_RNG_BGN_DT", "BENE_RNG_END_DT")
     ma_by_member = coverage_spans(elig, "MEMBER_ID", "ENROLLMENT_START_DT", "ENROLLMENT_END_DT")
     member_of = {r["MBI"]: r["MEMBER_ID"] for r in elig}
@@ -108,7 +108,7 @@ def run(cclf_dir: Path, humana_dir: Path, crossover: Path) -> bool:
                f"listed but not in both: {sorted(switchers - both)[:3]}")  # fmt: skip
     for r in xrows:
         if member_of.get(r["BENE_MBI_ID"]) != r["MEMBER_ID"]:
-            c.fail(f"{r['BENE_MBI_ID']}: MEMBER_ID {r['MEMBER_ID']} not in HUM_ELIG for that MBI")
+            c.fail(f"{r['BENE_MBI_ID']}: MEMBER_ID {r['MEMBER_ID']} not in MAP_ELIG for that MBI")
     c.info = f"{len(ffs)} FFS beneficiaries, {len(ma)} MA members, {len(both)} in both"
 
     c = check("no overlapping FFS and MA coverage; observed switches match crossover list")
@@ -123,8 +123,8 @@ def run(cclf_dir: Path, humana_dir: Path, crossover: Path) -> bool:
             c.fail(f"{mbi}: observed {sorted(transitions(f_spans, m_spans))} "
                    f"!= listed {sorted(expected[mbi])}")  # fmt: skip
 
-    c = check("no CCLF claims during MA coverage; no Humana claims during FFS coverage")
-    n_cclf = n_hum = 0
+    c = check("no CCLF claims during MA coverage; no MA payer claims during FFS coverage")
+    n_cclf = n_ma = 0
     for ft in ("CCLF1", "CCLF5"):
         for mk, r in cclf[ft]:
             mbi = r["BENE_MBI_ID"]
@@ -133,23 +133,23 @@ def run(cclf_dir: Path, humana_dir: Path, crossover: Path) -> bool:
                 lo, hi = date.fromisoformat(r["CLM_FROM_DT"]), date.fromisoformat(r["CLM_THRU_DT"])
                 if overlaps_any_span(ma[mbi], lo, hi):
                     c.fail(f"{mk} {ft} {r['CUR_CLM_UNIQ_ID']} {lo}..{hi} during MA coverage")
-    for mk, r in hum["HUM_MEDCLM"]:
+    for mk, r in map_files["MAP_MEDCLM"]:
         mbi = r["MBI"]
         if mbi in ffs:
-            n_hum += 1
+            n_ma += 1
             lo, hi = (
                 date.fromisoformat(r["SERVICE_FROM_DT"]),
                 date.fromisoformat(r["SERVICE_TO_DT"]),
             )
             if overlaps_any_span(ffs[mbi], lo, hi):
-                c.fail(f"{mk} HUM_MEDCLM {r['CLAIM_ID']} {lo}..{hi} during FFS coverage")
-    c.info = f"{n_cclf} CCLF and {n_hum} Humana claim rows for switchers checked"
+                c.fail(f"{mk} MAP_MEDCLM {r['CLAIM_ID']} {lo}..{hi} during FFS coverage")
+    c.info = f"{n_cclf} CCLF and {n_ma} MA payer claim rows for switchers checked"
 
     c = check("demographics agree: name/DOB/sex always; address and dual at each handoff")
     by_month_cclf: dict[tuple[str, str], dict] = {}
-    by_month_hum: dict[tuple[str, str], dict] = {}
+    by_month_ma: dict[tuple[str, str], dict] = {}
     ident_cclf: dict[str, set] = defaultdict(set)
-    ident_hum: dict[str, set] = defaultdict(set)
+    ident_ma: dict[str, set] = defaultdict(set)
     for mk, r in cclf["CCLF8"]:
         if r["BENE_MBI_ID"] in switchers:
             by_month_cclf[(r["BENE_MBI_ID"], mk)] = r
@@ -157,42 +157,42 @@ def run(cclf_dir: Path, humana_dir: Path, crossover: Path) -> bool:
                 r["BENE_1ST_NAME"], r["BENE_MIDL_NAME"], r["BENE_LAST_NAME"], r["BENE_DOB"],
                 GENDER.get(r["BENE_SEX_CD"], "?"),
             ))  # fmt: skip
-    for mk, r in hum["HUM_ELIG"]:
+    for mk, r in map_files["MAP_ELIG"]:
         if r["MBI"] in switchers:
-            by_month_hum[(r["MBI"], mk)] = r
-            ident_hum[r["MBI"]].add(
+            by_month_ma[(r["MBI"], mk)] = r
+            ident_ma[r["MBI"]].add(
                 (r["FIRST_NAME"], r["MIDDLE_INITIAL"], r["LAST_NAME"], r["DOB"], r["GENDER"])
             )
     for mbi in sorted(switchers):
-        if len(ident_cclf[mbi] | ident_hum[mbi]) != 1:
-            c.fail(f"{mbi}: name/DOB/sex differ: {sorted(ident_cclf[mbi] | ident_hum[mbi])}")
+        if len(ident_cclf[mbi] | ident_ma[mbi]) != 1:
+            c.fail(f"{mbi}: name/DOB/sex differ: {sorted(ident_cclf[mbi] | ident_ma[mbi])}")
     handoffs = 0
-    for key in sorted(set(by_month_cclf) & set(by_month_hum)):
-        a, b = by_month_cclf[key], by_month_hum[key]
+    for key in sorted(set(by_month_cclf) & set(by_month_ma)):
+        a, b = by_month_cclf[key], by_month_ma[key]
         handoffs += 1
         mine = (a["BENE_LINE_1_ADR"], a["GEO_ZIP_PLC_NAME"], a["GEO_USPS_STATE_CD"],
                 a["GEO_ZIP5_CD"], a["BENE_FIPS_STATE_CD"] + a["BENE_FIPS_CNTY_CD"])  # fmt: skip
         theirs = (b["ADDRESS_LINE_1"], b["CITY"], b["STATE"], b["ZIP"], b["COUNTY_FIPS"])
         if mine != theirs:
-            c.fail(f"{key}: address CCLF8 {mine} != HUM_ELIG {theirs}")
+            c.fail(f"{key}: address CCLF8 {mine} != MAP_ELIG {theirs}")
         if (a["BENE_DUAL_STUS_CD"] != "NA") != (b["DUAL_FLAG"] == "Y"):
             c.fail(f"{key}: dual status differs")
     if handoffs < len(xrows):
-        c.fail(f"only {handoffs} same-month CCLF8/HUM_ELIG row pairs for {len(xrows)} switches")
+        c.fail(f"only {handoffs} same-month CCLF8/MAP_ELIG row pairs for {len(xrows)} switches")
     c.info = f"{handoffs} same-month row pairs compared"
 
-    return report(checks, f"Cross-payer validation: {cclf_dir} vs {humana_dir}")
+    return report(checks, f"Cross-payer validation: {cclf_dir} vs {ma_payer_dir}")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--cclf-dir", type=Path, default=HERE / "output" / "cms")
-    parser.add_argument("--humana-dir", type=Path, default=HERE / "output" / "humana")
+    parser.add_argument("--ma-payer-dir", type=Path, default=HERE / "output" / "ma_payer")
     parser.add_argument(
         "--crossover", type=Path, default=HERE / "answer_key" / "crossover_members.csv"
     )
     args = parser.parse_args(argv)
-    return 0 if run(args.cclf_dir, args.humana_dir, args.crossover) else 1
+    return 0 if run(args.cclf_dir, args.ma_payer_dir, args.crossover) else 1
 
 
 if __name__ == "__main__":

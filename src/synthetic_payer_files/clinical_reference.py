@@ -1,4 +1,4 @@
-"""Clinical reference data shared by the CCLF (FFS) and Humana (MA) generators.
+"""Clinical reference data shared by the CCLF (FFS) and MA payer generators.
 
 ICD-10-CM codes are billable codes stored without the decimal point, as in CMS files.
 Fee amounts approximate 2023 Medicare national rates; everything else is synthetic.
