@@ -1,8 +1,8 @@
 # synthetic-payer-files
 
 Seeded synthetic payer delivery files: CMS CCLF (Medicare FFS) and a fictional Medicare
-Advantage (MA) payer, plus answer keys. Consumed by the claims-lakehouse-dbt-duckdb repo,
-which pins a release tag. See README.md.
+Advantage (MA) payer, plus answer keys. Consumed by the claims-lakehouse-dbt-duckdb and
+claims-lakehouse-databricks-azure repos, which pin a release tag. See README.md.
 
 | Path | What |
 |---|---|
